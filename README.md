@@ -5,3 +5,5 @@
 ## Techniques used
 - Zero short learning 
 - Few short learning
+  
+Get personalized gym and diet plan now [FitBot ](https://jagdishmalagond.github.io/FitBot/).
