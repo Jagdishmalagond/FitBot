@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitBot</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="nav">
+        <div class="logo">
+            <img class="logo" src="https://t3.ftcdn.net/jpg/02/43/26/66/240_F_243266606_qrREg3SESvf13xf7i7gBpG2aNsqFC1it.jpg" alt="">
+        <h1>Fit<span id="inside-text"> Bot</span></h1>
+        </div>
+        <h5><a href="mailto:pes2202101259@pesu.pes.edu">Contact Me</a></h5>
+    </div>
+    <div class="container">
+        <div class="inner-container">
+            <img class="my-img" src="./gym-robot.png" alt="gym-robot">
+            <h4 id="thinking-text">I'm your virtual fitness assisstant</h4>
+            <p class="warning">Please provide correct details to get a personalized and accurate  plan</p>
+        </div>
+        <div id="conversation-container">
+            <!-- Conversation will be dynamically populated here -->
+        </div>
+        <div id="input-container">
+            <input type="text" id="inputField" class="form-control" style="display: none;" required>
+            <select id="selectField" class="form-control" style="display: none;" required>
+                <option selected disabled>Choose...</option>
+            </select>
+            <button id="submitButton" class="btn btn-primary" style="display: none;">Proceed 👍</button>
+            <button id="resetButton" class="btn btn-danger" style="display: none;">Restart the conversation  </button>
+        </div>
+        <div id="buttons-container" style="display: none;">
+            <p class="warning">The generated plan will be  generic gym and diet plan only .Please consult professional</p>
+            <button type="button" class="btn btn-primary" id="generatePlan">Generate Plan</button>
+            <button type="button" class="btn btn-success" id="motivateMe">Motivate me</button>
+        </div>
+        <div class="response" id="response"></div>
+        <div class="loader" id="loader" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <h6>©️ copyright @  FitBot</h6>
+        <h5>Admin: Jagdish</h5>
+    </footer>
+    <script type="importmap">
+        {
+            "imports": {
+                "@google/generative-ai": "https://esm.run/@google/generative-ai"
+            }
+        }
+    </script>
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+        const API_KEY = "AIzaSyCowAO-bwv3CHj6AIL_8tzXVu1P_sFTvZQ";
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const questions = [
+            { question: "Hii there I'm FitBot 💪,Please Enter your name", type: "text", id: "name" },
+            { question: "Now Enter your age 🧑👴", type: "number", id: "age" },
+            { question: "Enter your height (in cm) 🧍‍♂️", type: "number", id: "height" },
+            { question: "Enter your weight (in kg) ", type: "number", id: "weight" },
+            { question: "Select duration (months)", type: "select", id: "month", options: ["1", "2", "3"] },
+            { question: "Select your gender🧍‍♀️🧍‍♂️", type: "select", id: "gender", options: ["Male", "Female"] },
+            { question: "Select your fitness level", type: "select", id: "level", options: ["Beginner", "Intermediate", "Advanced"] },
+            { question: "Do you prefer only vegetarian diet ? 🌿🍉", type: "select", id: "vegetarian", options: ["Yes", "No"] },
+        ];
+
+        let currentQuestionIndex = 0;
+        let answers = {};
+
+        function addMessage(content, type) {
+            const conversationContainer = document.getElementById("conversation-container");
+            const messageElement = document.createElement("div");
+            messageElement.className = `${type} conversation`;
+            messageElement.innerHTML = `<div class="bubble">${content}</div>`;
+            conversationContainer.appendChild(messageElement);
+            conversationContainer.scrollTop = conversationContainer.scrollHeight;
+        }
+
+        function showNextQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                const currentQuestion = questions[currentQuestionIndex];
+                addMessage(currentQuestion.question, "question");
+
+                const inputField = document.getElementById("inputField");
+                const selectField = document.getElementById("selectField");
+
+                inputField.style.display = "none";
+                selectField.style.display = "none";
+
+                if (currentQuestion.type === "text" || currentQuestion.type === "number") {
+                    inputField.type = currentQuestion.type;
+                    inputField.style.display = "block";
+                    inputField.value = answers[currentQuestion.id] || "";
+                    inputField.required = true;
+                } else if (currentQuestion.type === "select") {
+                    selectField.innerHTML = "";
+                    selectField.style.display = "block";
+                    const defaultOption = document.createElement("option");
+                    defaultOption.disabled = true;
+                    defaultOption.selected = true;
+                    defaultOption.text = "Choose...";
+                    selectField.add(defaultOption);
+                    currentQuestion.options.forEach(option => {
+                        const optionElement = document.createElement("option");
+                        optionElement.value = option;
+                        optionElement.text = option;
+                        selectField.add(optionElement);
+                    });
+                    selectField.value = answers[currentQuestion.id] || "";
+                    selectField.required = true;
+                }
+                document.getElementById("submitButton").style.display = "block";
+                document.getElementById("resetButton").style.display = "block";
+            } else {
+                document.getElementById("buttons-container").style.display = "block";
+                addMessage("Thanks for providing all the details ", "question");
+                addMessage("Check motivate me to get motivated 🧐", "question");
+                addMessage("You can now proceed with generating plan💪", "question");
+                document.getElementById("input-container").style.display = "none";
+            }
+        }
+
+        function resetForm() {
+            currentQuestionIndex = 0;
+            answers = {};
+            document.getElementById("conversation-container").innerHTML = "";
+            document.getElementById("input-container").style.display = "block";
+            document.getElementById("buttons-container").style.display = "none";
+            document.getElementById("submitButton").style.display = "none";
+            document.getElementById("resetButton").style.display = "none";
+            showNextQuestion();
+        }
+
+        document.getElementById("submitButton").addEventListener("click", () => {
+            const currentQuestion = questions[currentQuestionIndex];
+            let answer = "";
+            if (currentQuestion.type === "text" || currentQuestion.type === "number") {
+                answer = document.getElementById("inputField").value;
+                if (!answer) {
+                    alert('Please fill out this field.');
+                    return;
+                }
+                answers[currentQuestion.id] = answer;
+            } else if (currentQuestion.type === "select") {
+                answer = document.getElementById("selectField").value;
+                if (!answer) {
+                    alert('Please select an option.');
+                    return;
+                }
+                answers[currentQuestion.id] = answer;
+            }
+            addMessage(answer, "answer");
+
+            // If the current question is asking for the name, add a greeting
+            if (currentQuestion.id === "name") {
+                addMessage(`Hi 👋👋 ${answer}! `, "question");
+            }
+
+            currentQuestionIndex++;
+            // document.getElementById('loader').style.display = 'block';
+            setTimeout(()=>{
+                showNextQuestion();
+                // document.getElementById('loader').style.display = 'none';
+            },600);
+        });
+
+        document.getElementById("resetButton").addEventListener("click", resetForm);
+
+        document.getElementById("generatePlan").addEventListener("click", async () => {
+            const age = answers.age;
+            const height = answers.height;
+            const weight = answers.weight;
+            const month = answers.month;
+            const gender = answers.gender;
+            const level = answers.level;
+            const isVegetarian = answers.vegetarian === "Yes";
+            if (weight < 35) {
+                alert("Weight is less than 35, going to the gym is not recommended for you");
+            } else {
+                document.getElementById('thinking-text').innerText = "Wait while we recommend an awesome plan for you ...";
+                document.getElementById('loader').style.display = 'block';
+                await run(age, height, weight, month, level, isVegetarian);
+            }
+        });
+
+        document.getElementById("motivateMe").addEventListener("click", () => {
+            const images = [
+                'images/img1.jpg',
+                'images/img2.jpg',
+                'images/img3.jpg',
+                'images/img4.jpg',
+                'images/img5.jpg',
+                'images/img6.jpg',
+                'images/img7.jpg',
+                'images/img8.jpg',
+            ];
+            const randomImage = images[Math.floor(Math.random() * images.length)];
+            document.getElementById('response').innerHTML = `<img src="${randomImage}" alt="Motivational Image" style="height: 300px;" class="img-fluid">`;
+        });
+
+        async function run(age, height, weight, month, level, isVegetarian) {
+            let dietType = isVegetarian ? "vegetarian" : "non-vegetarian";
+            let prompt = `Create a gym and ${dietType} diet plan tailored for a duration of ${month} months. The individual is ${age} years old, ${height} cm tall, weighs ${weight} kg, and is at a ${level} fitness level. 
+            1) List of exercises to be completed in all months:
+            2) List of diet options:
+            Each item should be on a new line. Do not include any # or * characters in the response.`;
+
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = await response.text();
+            document.getElementById('response').innerText = text.replace(/[#*]/g, ""); // Remove # and * characters
+            document.getElementById('loader').style.display = 'none'; // Hide the loader
+        }
+
+        showNextQuestion();
+    </script>
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
